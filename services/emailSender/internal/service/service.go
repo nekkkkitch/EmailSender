@@ -27,17 +27,18 @@ func New(sender IEmailSender, redis IRedis) (*SenderService, error) {
 func (s *SenderService) SendCode(email, first_name string) error {
 	code := generateCode()
 	content := []byte(fmt.Sprintf("Здравствуйте, %s. Ваш код для подтверждения: %s", first_name, code))
-	err := s.sender.SendEmail(content, email)
+	err := s.redis.PutCode(email, code)
+	if err != nil {
+		slog.Error(fmt.Sprintf("service SendCode error: %v", err.Error()))
+		return err
+	}
+	err = s.sender.SendEmail(content, email)
 	if err != nil {
 		slog.Error(fmt.Sprintf("service SendCode error: %v", err.Error()))
 		return err
 	}
 	slog.Info(fmt.Sprintf("Made code %s for user %s", code, email))
-	err = s.redis.PutCode(email, code)
-	if err != nil {
-		slog.Error(fmt.Sprintf("service SendCode error: %v", err.Error()))
-		return err
-	}
+
 	return nil
 }
 

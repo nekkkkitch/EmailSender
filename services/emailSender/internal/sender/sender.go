@@ -25,6 +25,7 @@ func New(cfg *Config) (*EmailSender, error) {
 }
 
 func (s *EmailSender) SendEmail(content []byte, reciever string) error {
+	slog.Info(fmt.Sprintf("Sending code %s to user %s", string(content), reciever))
 	err := smtp.SendMail(s.cfg.Host+":"+s.cfg.Port, *s.auth, s.cfg.Email, []string{reciever}, content)
 	if err != nil {
 		slog.Error(fmt.Sprintf("sender SendEmail error: %v", err))
