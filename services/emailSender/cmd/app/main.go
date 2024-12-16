@@ -1,7 +1,6 @@
 package main
 
 import (
-	"EmailSender/services/emailSender/internal/redis"
 	"EmailSender/services/emailSender/internal/router"
 	"EmailSender/services/emailSender/internal/sender"
 	"EmailSender/services/emailSender/internal/service"
@@ -12,7 +11,6 @@ import (
 
 type Config struct {
 	RouterConfig *router.Config `yaml:"router" env-prefix:"ROUTER_"`
-	RedisConfig  *redis.Config  `yaml:"redis" env-prefix:"REDIS_"`
 	SenderConfig *sender.Config `yaml:"sender" env-prefix:"SENDER_"`
 }
 
@@ -31,17 +29,12 @@ func main() {
 	}
 	log.Println("Config file read successfully")
 	log.Println(*cfg.SenderConfig)
-	redis, err := redis.New(cfg.RedisConfig)
-	if err != nil {
-		log.Fatalln(err)
-	}
-	log.Println("Redis db connected successfully")
 	sender, err := sender.New(cfg.SenderConfig)
 	if err != nil {
 		log.Fatalln(err)
 	}
 	log.Println("Email sender connected successfully")
-	service, err := service.New(sender, redis)
+	service, err := service.New(sender)
 	if err != nil {
 		log.Fatalln(err)
 	}
