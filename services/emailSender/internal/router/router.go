@@ -20,15 +20,13 @@ type Router struct {
 }
 
 type IService interface {
-	SendCode(email, first_name string) error
-	VerifyCode(email, code string) (bool, error)
+	SendCode(email, first_name string) (string, error)
 }
 
 func New(cfg *Config, svc IService) (*Router, error) {
 	app := fiber.New()
 	router := Router{cfg: cfg, senderService: svc, app: app}
 	router.app.Post("/sendemail", router.SendCode())
-	router.app.Post("/verifycode", router.VerifyCode())
 	return &router, nil
 }
 
@@ -49,33 +47,13 @@ func (r *Router) SendCode() fiber.Handler {
 			c.Status(500)
 			return err
 		}
-		err = r.senderService.SendCode(data["email"], data["name"])
+		code, err := r.senderService.SendCode(data["email"], data["name"])
 		if err != nil {
 			slog.Error(fmt.Sprintf("router SendCode send error: %v", err.Error()))
 			c.Status(500)
-			return err
+			c.WriteString("Warning: message wasn't sent")
 		}
 		c.Status(200)
-		return nil
-	}
-}
-
-func (r *Router) VerifyCode() fiber.Handler {
-	return func(c *fiber.Ctx) error {
-		data := map[string]string{}
-		err := json.Unmarshal(c.Body(), &data)
-		if err != nil {
-			slog.Error(fmt.Sprintf("router VerifyCode unmarshal error: %v", err.Error()))
-			c.Status(500)
-			return err
-		}
-		isVerify, err := r.senderService.VerifyCode(data["email"], data["code"])
-		if err != nil {
-			slog.Error(fmt.Sprintf("router VerifyCode verify error: %v", err.Error()))
-			c.Status(500)
-			return err
-		}
-		c.Status(200)
-		return c.JSON(fiber.Map{"isVerify": isVerify})
+		return c.JSON(fiber.Map{"code": code})
 	}
 }
